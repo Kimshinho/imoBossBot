@@ -2,12 +2,81 @@
 import discord
 import datetime
 import re
+import json
+import os
 
 from core.bot import bot
 from core.boss_data import BOSS_DATA
 from core import storage
 
 from views.move_confirm import MoveConfirmView
+
+def save_custom_boss(boss_name, time_str, boss_alias):
+    """커스텀 보스를 파일에 저장"""
+    try:
+        custom_boss_file = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "data",
+            "custom_bosses.json"
+        )
+        
+        # 기존 커스텀 보스 로드
+        if os.path.exists(custom_boss_file):
+            with open(custom_boss_file, 'r', encoding='utf-8') as f:
+                custom = json.load(f)
+        else:
+            custom = {}
+        
+        # 새 보스 추가
+        custom[boss_name] = {"time": time_str, "alias": boss_alias}
+        BOSS_DATA[boss_name] = {"time": time_str, "alias": boss_alias}
+        
+        # 파일 저장
+        os.makedirs(os.path.dirname(custom_boss_file), exist_ok=True)
+        with open(custom_boss_file, 'w', encoding='utf-8') as f:
+            json.dump(custom, f, ensure_ascii=False, indent=2)
+        
+        return True
+    except Exception as e:
+        print(f"❌ 보스 저장 실패: {e}")
+        return False
+
+def delete_custom_boss(boss_name):
+    """보스목록에서 커스텀 보스 삭제"""
+    try:
+        custom_boss_file = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "data",
+            "custom_bosses.json"
+        )
+        
+        # 기존 커스텀 보스 로드
+        if os.path.exists(custom_boss_file):
+            with open(custom_boss_file, 'r', encoding='utf-8') as f:
+                custom = json.load(f)
+        else:
+            custom = {}
+        
+        # 보스 삭제
+        if boss_name in custom:
+            del custom[boss_name]
+            
+            # BOSS_DATA에서도 제거
+            if boss_name in BOSS_DATA:
+                del BOSS_DATA[boss_name]
+            
+            # 파일 저장
+            with open(custom_boss_file, 'w', encoding='utf-8') as f:
+                json.dump(custom, f, ensure_ascii=False, indent=2)
+            
+            return True
+        
+        return False
+    except Exception as e:
+        print(f"❌ 보스 삭제 실패: {e}")
+        return False
 
 @bot.event
 async def on_message(message):
@@ -194,6 +263,9 @@ async def on_message(message):
             "📋 보스목록\n"
             "`보스목록`\n\n"
 
+            "➕ 보스 등록\n"
+            "`보스등록 02:30:00 여왕(ㅇㅇ)`\n\n"
+
             "⚔️ 컷 입력\n"
             "`와당컷`\n"
             "`ㅇㄷㅋ`\n\n"
@@ -202,14 +274,152 @@ async def on_message(message):
             "`1304 깬컷`\n"
             "`깬컷 13:04`\n\n"
 
-            "❌ 삭제\n"
+            "❌ 현황에서 삭제\n"
             "`깬삭제`\n\n"
+
+            "🗑️ 보스목록 삭제\n"
+            "`보스삭제 깬`\n\n"
 
             "📊 현황\n"
             "`보스탐`"
         )
 
         await message.channel.send(manual)
+        return
+
+    # =====================
+    # 보스 등록
+    # =====================
+    if content.startswith("보스등록"):
+
+        parts = content.replace("보스등록", "").strip().split()
+
+        if len(parts) < 2:
+
+            await message.channel.send(
+                "❌ 형식 오류\n"
+                "예시: `보스등록 02:30:00 여왕(ㅇㅇ)`"
+            )
+
+            return
+
+        time_str = parts[0]
+
+        boss_info_str = " ".join(parts[1:])
+
+        # 시간 형식 검증
+        if not re.match(r'^\d{1,2}:\d{2}:\d{2}$', time_str):
+
+            await message.channel.send(
+                "❌ 시간 형식 오류\n"
+                "예시: 02:30:00 (HH:MM:SS)"
+            )
+
+            return
+
+        # 보스이름(약어) 파싱
+        match = re.match(r'(.+?)\((.+?)\)', boss_info_str)
+
+        if not match:
+
+            await message.channel.send(
+                "❌ 보스 정보 형식 오류\n"
+                "예시: `보스등록 02:30:00 여왕(ㅇㅇ)`"
+            )
+
+            return
+
+        boss_name = match.group(1).strip()
+
+        boss_alias = match.group(2).strip()
+
+        # 중복 확인
+        if boss_name in BOSS_DATA:
+
+            await message.channel.send(
+                f"⚠️ '{boss_name}'은(는) 이미 등록된 보스입니다."
+            )
+
+            return
+
+        # 약어 중복 확인
+        for name, info in BOSS_DATA.items():
+
+            if info['alias'] == boss_alias:
+
+                await message.channel.send(
+                    f"⚠️ 약어 '{boss_alias}'은(는) "
+                    f"'{name}'에서 이미 사용 중입니다."
+                )
+
+                return
+
+        # 보스 저장
+        if save_custom_boss(boss_name, time_str, boss_alias):
+
+            await message.channel.send(
+                f"✅ 보스 등록 완료!\n"
+                f"👹 {boss_name}({boss_alias})\n"
+                f"⏱️ 젠 타임: {time_str}"
+            )
+
+        else:
+
+            await message.channel.send(
+                "❌ 보스 저장 실패"
+            )
+
+        return
+
+    # =====================
+    # 보스 목록 삭제
+    # =====================
+    if content.startswith("보스삭제"):
+
+        input_name = content.replace("보스삭제", "").strip()
+
+        if not input_name:
+
+            await message.channel.send(
+                "❌ 형식 오류\n"
+                "예시: `보스삭제 깬`"
+            )
+
+            return
+
+        # 보스 찾기
+        target_boss = None
+
+        for name, info in BOSS_DATA.items():
+
+            if (
+                name == input_name
+                or info['alias'] == input_name
+            ):
+                target_boss = name
+                break
+
+        if not target_boss:
+
+            await message.channel.send(
+                f"⚠️ '{input_name}' 보스를 찾을 수 없습니다."
+            )
+
+            return
+
+        # 보스 삭제
+        if delete_custom_boss(target_boss):
+
+            await message.channel.send(
+                f"✅ '{target_boss}' 보스목록 삭제 완료!"
+            )
+
+        else:
+
+            await message.channel.send(
+                f"⚠️ '{target_boss}'은(는) 기본 보스라 삭제할 수 없습니다."
+            )
+
         return
 
     # =====================
