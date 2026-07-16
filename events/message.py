@@ -481,7 +481,7 @@ async def on_message(message):
             cmd_part = word
 
         elif re.match(
-            r'^\\d{1,2}:?\\d{2}$',
+            r'^\d{2,4}$|^\d{1,2}:\d{2}$',
             word
         ):
             time_part = word.replace(":", "")
