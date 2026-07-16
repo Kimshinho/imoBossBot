@@ -14,6 +14,30 @@ async def boss_check_loop():
 
     for boss, gen_time in list(storage.boss_timers.items()):
 
+        # ============================
+        # 미입력 3회 이상 자동 삭제 체크
+        # ============================
+        extend_count = storage.extend_counts.get(
+            boss,
+            0
+        )
+
+        if extend_count >= 3:
+            
+            del storage.boss_timers[boss]
+            
+            if boss in storage.notified_records:
+                del storage.notified_records[boss]
+            
+            storage.extend_counts[boss] = 0
+            
+            await send_to_target_channel(
+                f"💀 {boss} 미입력 {extend_count}회\n"
+                f"🔴 자동 삭제됨"
+            )
+            
+            continue
+
         h, m, s = map(
             int,
             BOSS_DATA[boss]['time'].split(':')
