@@ -9,3 +9,6 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+# 사용자 데이터 (로컬 환경)
+data/custom_bosses.json
