@@ -10,5 +10,5 @@ __pycache__/
 .vscode/
 .idea/
 
-# 사용자 데이터 (로컬 환경)
-data/custom_bosses.json
+# 실시간 상태 저장 파일 (로컬 환경)
+data/boss_state.json
