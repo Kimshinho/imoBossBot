@@ -255,7 +255,7 @@ async def on_message(message):
     # =====================
     # 메뉴얼
     # =====================
-    if content == "메뉴얼":
+    if content in ["메뉴얼", "명령어"]:
 
         manual = (
             "🎮 아이모 보스탐 매니저 v1.2\n\n"
