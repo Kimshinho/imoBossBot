@@ -644,6 +644,38 @@ async def on_message(message):
                     "자동 연장 완료\n"
                 )
 
+            # =================
+            # 미입력 3회 이상 자동 삭제
+            # =================
+            extend_count = storage.extend_counts.get(
+                target_boss,
+                0
+            )
+
+            if extend_count >= 3:
+
+                del storage.boss_timers[
+                    target_boss
+                ]
+
+                if target_boss in storage.notified_records:
+                    del storage.notified_records[
+                        target_boss
+                    ]
+
+                storage.extend_counts[
+                    target_boss
+                ] = 0
+
+                await message.channel.send(
+                    f"💀 {target_boss} 컷 확인!\n"
+                    f"{cut_msg}"
+                    f"⚠️ 미입력 {extend_count}회\n"
+                    f"🔴 현황에서 자동 삭제됨"
+                )
+
+                return
+
             storage.boss_timers[
                 target_boss
             ] = next_gen_time
