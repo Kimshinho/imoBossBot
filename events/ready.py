@@ -5,7 +5,7 @@ from tasks.boss_loop import boss_check_loop
 async def on_ready():
 
     print(
-        f"🤖 [{bot.user.name}] "
+        f"[{bot.user.name}] "
         f"아이모 보스탐 매니저 가동 완료!"
     )
 
