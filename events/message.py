@@ -9,6 +9,7 @@ from core.boss_data import BOSS_DATA
 from core import storage
 
 from views.move_confirm import MoveConfirmView
+from utils.time_utils import now as current_time
 
 
 def parse_cut_time(value):
@@ -286,7 +287,7 @@ async def on_message(message):
                 boss_time_str.split(':')
             )
 
-            now = datetime.datetime.now()
+            now = current_time()
 
             # =================
             # 과거 시간 입력
@@ -484,7 +485,7 @@ async def on_message(message):
             if not (0 <= h <= 23 and 0 <= m <= 59 and 0 <= s <= 59):
                 continue
 
-            now = datetime.datetime.now()
+            now = current_time()
             target_gen_time = now.replace(
                 hour=h,
                 minute=m,

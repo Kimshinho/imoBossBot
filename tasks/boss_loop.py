@@ -6,11 +6,12 @@ from core.boss_data import BOSS_DATA
 from core import storage
 
 from utils.sender import send_to_target_channel
+from utils.time_utils import now as current_time
 
 @tasks.loop(seconds=1)
 async def boss_check_loop():
 
-    now = datetime.datetime.now()
+    now = current_time()
 
     # ============================
     # 금서고 특정 시간 알림 처리 (HH:MM:SS 기준 유동 변경 가능)
